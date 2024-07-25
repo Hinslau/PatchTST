@@ -1,5 +1,4 @@
 
-
 import numpy as np
 import pandas as pd
 import os
@@ -21,15 +20,15 @@ import argparse
 parser = argparse.ArgumentParser()
 # Dataset and dataloader
 parser.add_argument('--dset_pretrain', type=str, default='etth1', help='dataset name')
-parser.add_argument('--context_points', type=int, default=512, help='sequence length')
+parser.add_argument('--context_points', type=int, default=336, help='sequence length')
 parser.add_argument('--target_points', type=int, default=96, help='forecast horizon')
-parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--num_workers', type=int, default=0, help='number of workers for DataLoader')
 parser.add_argument('--scaler', type=str, default='standard', help='scale the input data')
 parser.add_argument('--features', type=str, default='M', help='for multivariate model or univariate model')
 # Patch
-parser.add_argument('--patch_len', type=int, default=12, help='patch length')
-parser.add_argument('--stride', type=int, default=12, help='stride between patch')
+parser.add_argument('--patch_len', type=int, default=16, help='patch length')
+parser.add_argument('--stride', type=int, default=16, help='stride between patch')
 # RevIN
 parser.add_argument('--revin', type=int, default=1, help='reversible instance normalization')
 # Model args
@@ -42,16 +41,25 @@ parser.add_argument('--head_dropout', type=float, default=0.2, help='head dropou
 # Pretrain mask
 parser.add_argument('--mask_ratio', type=float, default=0.4, help='masking ratio for the input')
 # Optimization args
-parser.add_argument('--n_epochs_pretrain', type=int, default=10, help='number of pre-training epochs')
+parser.add_argument('--n_epochs_pretrain', type=int, default=20, help='number of pre-training epochs')
 parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
 # model id to keep track of the number of models saved
 parser.add_argument('--pretrained_model_id', type=int, default=1, help='id of the saved pretrained model')
+
+# 新加的内容
 parser.add_argument('--model_type', type=str, default='based_model', help='for multivariate model or univariate model')
+parser.add_argument('--data_path', type=str, default='etth1.csv', help='data file')
+parser.add_argument('--root_path', type=str, default='./dataset/', help='root path of the data file')
+parser.add_argument('--freq', type=str, default='h',
+                    help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
+
 
 
 args = parser.parse_args()
 print('args:', args)
-args.save_pretrained_model = 'patchtst_pretrained_cw'+str(args.context_points)+'_patch'+str(args.patch_len) + '_stride'+str(args.stride) + '_epochs-pretrain' + str(args.n_epochs_pretrain) + '_mask' + str(args.mask_ratio)  + '_model' + str(args.pretrained_model_id)
+args.save_pretrained_model = 'patchtst_pretrained_cw ' +str(args.context_points ) +'_patch ' +str \
+    (args.patch_len) + '_stride ' +str(args.stride) + '_epochs-pretrain' + str(args.n_epochs_pretrain) + '_mask' + str \
+    (args.mask_ratio)  + '_model' + str(args.pretrained_model_id)
 args.save_path = 'saved_models/' + args.dset_pretrain + '/masked_patchtst/' + args.model_type + '/'
 if not os.path.exists(args.save_path): os.makedirs(args.save_path)
 
@@ -65,7 +73,7 @@ def get_model(c_in, args):
     c_in: number of variables
     """
     # get number of patches
-    num_patch = (max(args.context_points, args.patch_len)-args.patch_len) // args.stride + 1    
+    num_patch = (max(args.context_points, args.patch_len ) -args.patch_len) // args.stride + 1
     print('number of patches:', num_patch)
     
     # get model
@@ -92,7 +100,7 @@ def get_model(c_in, args):
 
 def find_lr():
     # get dataloader
-    dls = get_dls(args)    
+    dls = get_dls(args)
     model = get_model(dls.vars, args)
     # get loss
     loss_func = torch.nn.MSELoss(reduction='mean')
@@ -108,7 +116,6 @@ def find_lr():
                         )                        
     # fit the data to the model
     suggested_lr = learn.lr_finder()
-    print('suggested_lr', suggested_lr)
     return suggested_lr
 
 
@@ -131,7 +138,7 @@ def pretrain_func(lr=args.lr):
                         loss_func, 
                         lr=lr, 
                         cbs=cbs,
-                        #metrics=[mse]
+                    # metrics=[mse]
                         )                        
     # fit the data to the model
     learn.fit_one_cycle(n_epochs=args.n_epochs_pretrain, lr_max=lr)

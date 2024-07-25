@@ -350,6 +350,12 @@ class _ScaledDotProductAttention(nn.Module):
             scores : [bs x n_heads x q_len x seq_len]
         '''
 
+
+
+
+
+
+
         # Scaled MatMul (q, k) - similarity scores for all pairs of positions in an input sequence
         attn_scores = torch.matmul(q, k) * self.scale      # attn_scores : [bs x n_heads x max_q_len x q_len]
 

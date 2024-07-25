@@ -39,9 +39,26 @@ def sigmoid_range(x, low, high):
     return torch.sigmoid(x) * (high - low) + low
 
 def get_activation_fn(activation):
-    if callable(activation): return activation()
-    elif activation.lower() == "relu": return nn.ReLU()
-    elif activation.lower() == "gelu": return nn.GELU()
-    raise ValueError(f'{activation} is not available. You can use "relu", "gelu", or a callable')
+    if callable(activation):
+        return activation()
+    elif isinstance(activation, str):
+        activation = activation.lower()
+        if activation == "relu":
+            return nn.ReLU()
+        elif activation == "gelu":
+            return nn.GELU()
+        elif activation == "silu" or activation == "swish":
+            return nn.SiLU()
+        elif activation == "elu":
+            return nn.ELU()
+        elif activation == "leaky_relu":
+            return nn.LeakyReLU()
+        elif activation == "tanh":
+            return nn.Tanh()
+        elif activation == "sigmoid":
+            return nn.Sigmoid()
+
+    raise ValueError(
+        f'{activation} is not available. You can use "relu", "gelu", "silu", "elu", "leaky_relu", "tanh", "sigmoid", or a callable')
 
 

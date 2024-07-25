@@ -98,15 +98,18 @@ class Exp_Main(Exp_Basic):
         return total_loss
 
     def train(self, setting):
+        # 获取训练、验证和测试数据加载器
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
+        # 创建保存模型检查点的目录
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
             os.makedirs(path)
 
         time_now = time.time()
+
 
         train_steps = len(train_loader)
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)

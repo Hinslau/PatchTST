@@ -51,6 +51,16 @@ class DataLoaders:
             collate_fn=self.collate_fn,
         )
 
+    def get_current_datafile(self, split='train'):
+        if split == 'train':
+            return self.train.dataset.get_current_datafile()
+        elif split == 'val':
+            return self.valid.dataset.get_current_datafile()
+        elif split == 'test':
+            return self.test.dataset.get_current_datafile()
+        else:
+            raise ValueError("Invalid split. Choose from 'train', 'val', or 'test'.")
+
     @classmethod
     def add_cli(self, parser):
         parser.add_argument("--batch_size", type=int, default=128)

@@ -1,0 +1,42 @@
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_0  
+mse:41.49042510986328, mae:4.992575645446777, rse:0.5088859796524048
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_1  
+mse:43.20355224609375, mae:5.062265396118164, rse:0.5192856192588806
+
+=====
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_0
+mse:41.49042510986328, mae:4.992575645446777, rse:0.5088859796524048
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_1  
+mse:43.20355224609375, mae:5.062265396118164, rse:0.5192856192588806
+
+====
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_0  
+mse:41.49042510986328, mae:4.992575645446777, rse:0.5088859796524048
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_1  
+mse:43.20355224609375, mae:5.062265396118164, rse:0.5192856192588806
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_0  
+mse:41.49042510986328, mae:4.992575645446777, rse:0.5088859796524048
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_1  
+mse:43.20355224609375, mae:5.062265396118164, rse:0.5192856192588806
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_0  
+mse:41.49042510986328, mae:4.992575645446777, rse:0.5088859796524048
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_1  
+mse:54.53630447387695, mae:5.722617149353027, rse:0.5834308862686157
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_0  
+mse:41.49042510986328, mae:4.992575645446777, rse:0.5088859796524048
+
+336_16_PatchTST_Finance_ftM_sl336_ll48_pl16_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_1  
+mse:54.53630447387695, mae:5.722617149353027, rse:0.5834308862686157
+
+336_32_PatchTST_Finance_ftM_sl336_ll48_pl32_dm64_nh4_el3_dl1_df8_fc1_ebfixed_dtTrue_Exp_0  
+mse:37.63054656982422, mae:4.73531436920166, rse:0.4709630012512207
+
