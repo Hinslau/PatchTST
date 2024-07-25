@@ -38,6 +38,15 @@ parser.add_argument('--d_model', type=int, default=128, help='Transformer d_mode
 parser.add_argument('--d_ff', type=int, default=512, help='Tranformer MLP dimension')
 parser.add_argument('--dropout', type=float, default=0.2, help='Transformer dropout')
 parser.add_argument('--head_dropout', type=float, default=0.2, help='head dropout')
+parser.add_argument('--learn_pe', type=bool, default=True, help='whether to learn positional encoding')
+parser.add_argument('--shared_embedding', type=bool, default=True, help='whether to use shared embedding')
+parser.add_argument('--res_attention', type=bool, default=False, help='whether to use residual attention')
+parser.add_argument('--pre_norm', type=bool, default=False, help='whether to use pre-norm')
+parser.add_argument('--pe', type=str, default='zeros',
+                    choices=['zero', 'zeros', 'normal', 'gauss', 'uniform', 'sincos'],
+                    help='type of positional encoding. Options: zero, zeros, normal, gauss, uniform, sincos')
+
+
 # Pretrain mask
 parser.add_argument('--mask_ratio', type=float, default=0.4, help='masking ratio for the input')
 # Optimization args
@@ -75,6 +84,7 @@ def get_model(c_in, args):
     # get number of patches
     num_patch = (max(args.context_points, args.patch_len ) -args.patch_len) // args.stride + 1
     print('number of patches:', num_patch)
+
     
     # get model
     model = PatchTST(c_in=c_in,
@@ -85,13 +95,16 @@ def get_model(c_in, args):
                 n_layers=args.n_layers,
                 n_heads=args.n_heads,
                 d_model=args.d_model,
-                shared_embedding=True,
+                shared_embedding=args.shared_embedding,
                 d_ff=args.d_ff,                        
                 dropout=args.dropout,
                 head_dropout=args.head_dropout,
                 act='relu',
                 head_type='pretrain',
-                res_attention=False
+                res_attention=args.res_attention,
+                learn_pe=args.learn_pe,
+                pre_norm=args.pre_norm,
+                pre_act=args.pe
                 )        
     # print out the model size
     print('number of model params', sum(p.numel() for p in model.parameters() if p.requires_grad))
