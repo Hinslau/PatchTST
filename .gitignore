@@ -472,3 +472,4 @@ PatchTST_self_supervised/dataset/dataset_log.txt
 PatchTST_self_supervised/saved_models/finance/masked_patchtst/based_model/patchtst_pretrained_cw 4_patch 2_stride 2_epochs-pretrain3_mask0.2_model1.pth
 PatchTST_self_supervised/saved_models/finance/masked_patchtst/based_model/patchtst_pretrained_cw 4_patch 2_stride 2_epochs-pretrain3_mask0.2_model1_losses.csv
 PatchTST_self_supervised/temp/current.pth
+*.csv
