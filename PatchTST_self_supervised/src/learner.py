@@ -29,6 +29,7 @@ class Learner(GetAttr):
                  metrics=None,
                  opt_func=Adam,
                  loss_boundary =10.0,
+                 virtual_batch_size=10,
                  **kwargs):
 
         self.model, self.dls, self.loss_func, self.lr = model, dls, loss_func, lr
@@ -46,6 +47,9 @@ class Learner(GetAttr):
         # Indicator of running lr_finder
         self.run_finder = False
         self.loss_boundary = loss_boundary
+
+        # virtual_batch_size
+        self.virtual_batch_size = virtual_batch_size
 
     def set_opt(self):
         if self.model:
@@ -85,7 +89,6 @@ class Learner(GetAttr):
         for cb in cb_list: self.remove_callback(cb)
 
     def fit(self, n_epochs, lr=None, cbs=None, do_valid=True):
-        " fit the model "
         self.n_epochs = n_epochs
         if not self.dls.valid: do_valid = False
         if cbs: self.add_callbacks(cbs)
@@ -96,53 +99,97 @@ class Learner(GetAttr):
             for self.epoch in range(n_epochs):
                 self('before_epoch')
 
+                # Training phase
                 self('before_epoch_train')
                 self.model.train()
                 self.dl = self.dls.train
 
+                accumulated_loss = 0
+                accumulated_samples = 0
                 for num, batch in enumerate(self.dl):
                     self.iter, self.batch = num, batch
                     self('before_batch_train')
-                    # forward + get loss + backward + optimize
+
+                    # forward + get loss
                     self.pred, self.loss = self.train_step(self.batch)
-                    # zero the parameter gradients
-                    self.opt.zero_grad()
-                    # gradient
-                    self.loss.backward()
-                    # update weights
-                    self.opt.step()
-                    # wandb.log({"train_loss": self.loss.item()})
+
+                    # Accumulate loss and sample count
+                    accumulated_loss += self.loss.item()
+                    accumulated_samples += 1
+                    # Scale loss to match current accumulated samples
+                    scaled_loss = self.loss / accumulated_samples
+
+                    # backward
+                    scaled_loss.backward()
+
+                    # Update parameters if:
+                    # 1. Accumulated samples reach virtual_batch_size
+                    # 2. End of dataset with accumulated samples
+                    # 3. Dataset has only one batch
+                    if (accumulated_samples == self.virtual_batch_size) or \
+                            ((num + 1) == len(self.dl) and accumulated_samples > 0) or \
+                            (len(self.dl) == 1):
+                        # # Adjust learning rate based on actual accumulated samples
+                        # effective_lr = self.lr * (accumulated_samples / self.virtual_batch_size)
+                        # for param_group in self.opt.param_groups:
+                        #     param_group['lr'] = effective_lr
+
+                        # optimize
+                        self.opt.step()
+                        self.opt.zero_grad()
+
+                        # Log average loss
+                        avg_loss = accumulated_loss / accumulated_samples
+                        # wandb.log({"train_loss": avg_loss, "effective_lr": effective_lr})
+
+                        if avg_loss > self.loss_boundary:
+                            logging.info(f"Large Training Loss: {avg_loss} From {self.dls.get_current_datafile()}")
+
+                        accumulated_loss = 0
+                        accumulated_samples = 0
+
                     self('after_batch_train')
-                    if self.loss > self.loss_boundary:
-                        logging.info(f"Large Training Loss: {self.loss} From {self.dls.get_current_datafile()}")
+
                 self('after_epoch_train')
 
+                # Validation phase
                 if do_valid:
-                    dl = None
                     self('before_epoch_valid')
-                    # model at evaluation mode
                     self.model.eval()
-                    self.dl = dl if dl else self.dls.valid
+                    self.dl = self.dls.valid
                     if self.dl:
                         with torch.no_grad():
+                            accumulated_loss = 0
+                            accumulated_samples = 0
                             for num, batch in enumerate(self.dl):
                                 self.iter, self.batch = num, batch
                                 self('before_batch_valid')
-                                # get the inputs
+
                                 self.xb, self.yb = self.batch
-                                # forward
                                 pred = self.model_forward()
-                                # compute loss
                                 loss = self.loss_func(pred, self.yb)
                                 self.pred = pred
                                 self.loss = loss
-                                # wandb.log({"validation_loss": self.loss.item()})
+
+                                accumulated_loss += self.loss.item()
+                                accumulated_samples += 1
+
+                                if (accumulated_samples == self.virtual_batch_size) or \
+                                        ((num + 1) == len(self.dl) and accumulated_samples > 0) or \
+                                        (len(self.dl) == 1):
+                                    avg_loss = accumulated_loss / accumulated_samples
+                                    # wandb.log({"validation_loss": avg_loss})
+
+                                    if avg_loss > self.loss_boundary:
+                                        logging.info(
+                                            f"Large Validation Loss: {avg_loss} From {self.dls.get_current_datafile()}")
+
+                                    accumulated_loss = 0
+                                    accumulated_samples = 0
+
                                 self('after_batch_valid')
-                                # logging.info(f"Current Validation Loss: {self.loss}")
-                                if self.loss > self.loss_boundary:
-                                    logging.info(
-                                        f"Large Validation Loss: {self.loss} From {self.dls.get_current_datafile()}")
                     self('after_epoch_valid')
+
                 self('after_epoch')
         except KeyboardInterrupt:
             pass
