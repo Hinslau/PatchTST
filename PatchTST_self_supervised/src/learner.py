@@ -28,8 +28,8 @@ class Learner(GetAttr):
                  cbs=None,
                  metrics=None,
                  opt_func=Adam,
-                 loss_boundary =10.0,
-                 virtual_batch_size=10,
+                 loss_boundary =15.0,
+                 virtual_batch_size=2,
                  **kwargs):
 
         self.model, self.dls, self.loss_func, self.lr = model, dls, loss_func, lr
@@ -50,6 +50,8 @@ class Learner(GetAttr):
 
         # virtual_batch_size
         self.virtual_batch_size = virtual_batch_size
+
+
 
     def set_opt(self):
         if self.model:
@@ -140,7 +142,7 @@ class Learner(GetAttr):
 
                         # Log average loss
                         avg_loss = accumulated_loss / accumulated_samples
-                        # wandb.log({"train_loss": avg_loss, "effective_lr": effective_lr})
+                        wandb.log({"train_loss": avg_loss})
 
                         if avg_loss > self.loss_boundary:
                             logging.info(f"Large Training Loss: {avg_loss} From {self.dls.get_current_datafile()}")
@@ -178,7 +180,7 @@ class Learner(GetAttr):
                                         ((num + 1) == len(self.dl) and accumulated_samples > 0) or \
                                         (len(self.dl) == 1):
                                     avg_loss = accumulated_loss / accumulated_samples
-                                    # wandb.log({"validation_loss": avg_loss})
+                                    wandb.log({"validation_loss": avg_loss})
 
                                     if avg_loss > self.loss_boundary:
                                         logging.info(

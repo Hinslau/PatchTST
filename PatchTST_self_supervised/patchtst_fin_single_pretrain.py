@@ -14,27 +14,30 @@ import random
 import argparse
 import sys
 
-# wandb.init(project="pretrain")
+exp_id = 3
+wandb.init(project=f"pretrain_{exp_id}")
+
 
 parser = argparse.ArgumentParser()
 
 if not os.path.exists('pretrain_log'):
     os.makedirs('pretrain_log')
-logging.basicConfig(filename='pretrain_log/pretrain.log', level=logging.INFO,
+logging.basicConfig(filename=f'pretrain_log/pretrain_{exp_id}.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 # Dataset and dataloader
 parser.add_argument('--dset_pretrain', type=str, default='finance', help='dataset name')
-parser.add_argument('--context_points', type=int, default=4, help='sequence length')
-parser.add_argument('--target_points', type=int, default=2, help='forecast horizon')
+parser.add_argument('--context_points', type=int, default=160, help='sequence length')
+parser.add_argument('--target_points', type=int, default=40, help='forecast horizon')
 parser.add_argument('--batch_size', type=int, default=1, help='batch size')
+parser.add_argument('--virtual_batch_size', type=int, default=3, help='virtual batch size')
 parser.add_argument('--num_workers', type=int, default=0, help='number of workers for DataLoader')
 parser.add_argument('--scaler', type=str, default='standard', help='scale the input data')
 parser.add_argument('--features', type=str, default='M', help='for multivariate model or univariate model')
 # Patch
-parser.add_argument('--patch_len', type=int, default=2, help='patch length')
-parser.add_argument('--stride', type=int, default=2, help='stride between patch')
+parser.add_argument('--patch_len', type=int, default=8, help='patch length')
+parser.add_argument('--stride', type=int, default=8, help='stride between patch')
 # RevIN
 parser.add_argument('--revin', type=int, default=1, help='reversible instance normalization')
 
@@ -45,6 +48,7 @@ parser.add_argument('--d_model', type=int, default=2, help='Transformer d_model'
 parser.add_argument('--d_ff', type=int, default=2, help='Tranformer MLP dimension')
 parser.add_argument('--dropout', type=float, default=0.2, help='Transformer dropout')
 parser.add_argument('--head_dropout', type=float, default=0.2, help='head dropout')
+parser.add_argument('--activation', type=str, default='relu', help='activation function')
 parser.add_argument('--learn_pe', type=bool, default=True, help='whether to learn positional encoding')
 parser.add_argument('--shared_embedding', type=bool, default=True, help='whether to use shared embedding')
 parser.add_argument('--res_attention', type=bool, default=False, help='whether to use residual attention')
@@ -57,26 +61,26 @@ parser.add_argument('--pe', type=str, default='zeros',
 # Pretrain mask
 parser.add_argument('--mask_ratio', type=float, default=0.2, help='masking ratio for the input')
 # Optimization args
-parser.add_argument('--n_epochs_pretrain', type=int, default=3, help='number of pre-training epochs')
+parser.add_argument('--n_epochs_pretrain', type=int, default=10, help='number of pre-training epochs')
 parser.add_argument('--lr', type=float, default=1e-5, help='learning rate')
-parser.add_argument('--n_iterations', type=int, default=2, help="number of iterations ")
+parser.add_argument('--n_iterations', type=int, default=5, help="number of iterations ")
 # model id to keep track of the number of models saved
-parser.add_argument('--pretrained_model_id', type=int, default=1, help='id of the saved pretrained model')
+parser.add_argument('--pretrained_model_id', type=int, default=exp_id, help='id of the saved pretrained model')
 parser.add_argument('--model_type', type=str, default='based_model', help='for multivariate model or univariate model')
 
 
 # 新加的内容
 parser.add_argument('--data_path', type=str, default='None', help='data file')
 parser.add_argument('--root_path', type=str, default='./dataset/processed_pretrain_single/', help='root path of the data file')
-parser.add_argument('--freq', type=str, default='h',
+parser.add_argument('--freq', type=str, default='t',
                     help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
 
-parser.add_argument("--loss_boundary", type=float, default=10.0, help="loss boundary of each batch for monitoring the model pretraining process")
+parser.add_argument("--loss_boundary", type=float, default=15.0, help="loss boundary of each batch for monitoring the model pretraining process")
 
 parser.add_argument('--continue_train', action='store_true', help='continue training from last checkpoint')
 
 args = parser.parse_args()
-# print('args:', args)
+print('args:', args)
 
 
 args.save_pretrained_model = 'patchtst_pretrained_cw ' + str(args.context_points) + '_patch ' + str \
@@ -111,7 +115,7 @@ def get_model(c_in, args):
                 d_ff=args.d_ff,
                 dropout=args.dropout,
                 head_dropout=args.head_dropout,
-                act='relu',
+                act=args.activation,
                 head_type='pretrain',
                 res_attention=args.res_attention,
                 learn_pe=args.learn_pe,
@@ -130,7 +134,8 @@ def find_lr(dls):
     cbs = [RevInCB(dls.vars, denorm=False)] if args.revin else []
     cbs += [PatchMaskCB(patch_len=args.patch_len, stride=args.stride, mask_ratio=args.mask_ratio)]
 
-    learn = Learner(dls, model, loss_func, lr=args.lr, cbs=cbs)
+    learn = Learner(dls, model, loss_func, lr=args.lr, cbs=cbs, loss_boundary=args.loss_boundary,
+                    virtual_batch_size=args.virtual_batch_size)
     suggested_lr = learn.lr_finder()
     return suggested_lr
 
@@ -154,6 +159,8 @@ def pretrain_func(dls, lr=args.lr, model=None):
                     lr=lr,
                     cbs=cbs,
                     # metrics=[mse]
+                    loss_boundary=args.loss_boundary,
+                    virtual_batch_size=args.virtual_batch_size
                     )
     # fit the data to the model
     learn.fit_one_cycle(n_epochs=args.n_epochs_pretrain, lr_max=lr)
