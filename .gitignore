@@ -464,3 +464,6 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/emacs,jetbrains+all,jupyternotebooks,linux,macos,microsoftoffice,notepadpp,python,tortoisegit,vim,visualstudiocode,windows
 *.pkl
+PatchTST_self_supervised/saved_models/finance/masked_patchtst/based_model/patchtst_pretrained_cw 4_patch 2_stride 2_epochs-pretrain3_mask0.2_model1_losses.csv
+*.pth
+*.pth
