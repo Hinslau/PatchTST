@@ -14,7 +14,7 @@ import random
 import argparse
 import sys
 
-exp_id = 3
+exp_id = 4
 wandb.init(project=f"pretrain_{exp_id}")
 
 
@@ -31,7 +31,7 @@ parser.add_argument('--dset_pretrain', type=str, default='finance', help='datase
 parser.add_argument('--context_points', type=int, default=160, help='sequence length')
 parser.add_argument('--target_points', type=int, default=40, help='forecast horizon')
 parser.add_argument('--batch_size', type=int, default=1, help='batch size')
-parser.add_argument('--virtual_batch_size', type=int, default=3, help='virtual batch size')
+parser.add_argument('--virtual_batch_size', type=int, default=5, help='virtual batch size')
 parser.add_argument('--num_workers', type=int, default=0, help='number of workers for DataLoader')
 parser.add_argument('--scaler', type=str, default='standard', help='scale the input data')
 parser.add_argument('--features', type=str, default='M', help='for multivariate model or univariate model')
@@ -42,17 +42,17 @@ parser.add_argument('--stride', type=int, default=8, help='stride between patch'
 parser.add_argument('--revin', type=int, default=1, help='reversible instance normalization')
 
 # Model args
-parser.add_argument('--n_layers', type=int, default=2, help='number of Transformer layers')
-parser.add_argument('--n_heads', type=int, default=2, help='number of Transformer heads')
-parser.add_argument('--d_model', type=int, default=2, help='Transformer d_model')
-parser.add_argument('--d_ff', type=int, default=2, help='Tranformer MLP dimension')
+parser.add_argument('--n_layers', type=int, default=6, help='number of Transformer layers')
+parser.add_argument('--n_heads', type=int, default=32, help='number of Transformer heads')
+parser.add_argument('--d_model', type=int, default=256, help='Transformer d_model')
+parser.add_argument('--d_ff', type=int, default=1024, help='Tranformer MLP dimension')
 parser.add_argument('--dropout', type=float, default=0.2, help='Transformer dropout')
 parser.add_argument('--head_dropout', type=float, default=0.2, help='head dropout')
 parser.add_argument('--activation', type=str, default='relu', help='activation function')
 parser.add_argument('--learn_pe', type=bool, default=True, help='whether to learn positional encoding')
 parser.add_argument('--shared_embedding', type=bool, default=True, help='whether to use shared embedding')
 parser.add_argument('--res_attention', type=bool, default=False, help='whether to use residual attention')
-parser.add_argument('--pre_norm', type=bool, default=False, help='whether to use pre-norm')
+parser.add_argument('--pre_norm', type=bool, default=True, help='whether to use pre-norm')
 parser.add_argument('--pe', type=str, default='zeros',
                     choices=['zero', 'zeros', 'normal', 'gauss', 'uniform', 'sincos'],
                     help='type of positional encoding. Options: zero, zeros, normal, gauss, uniform, sincos')
@@ -61,7 +61,7 @@ parser.add_argument('--pe', type=str, default='zeros',
 # Pretrain mask
 parser.add_argument('--mask_ratio', type=float, default=0.2, help='masking ratio for the input')
 # Optimization args
-parser.add_argument('--n_epochs_pretrain', type=int, default=10, help='number of pre-training epochs')
+parser.add_argument('--n_epochs_pretrain', type=int, default=15, help='number of pre-training epochs')
 parser.add_argument('--lr', type=float, default=1e-5, help='learning rate')
 parser.add_argument('--n_iterations', type=int, default=5, help="number of iterations ")
 # model id to keep track of the number of models saved
@@ -75,7 +75,7 @@ parser.add_argument('--root_path', type=str, default='./dataset/processed_pretra
 parser.add_argument('--freq', type=str, default='t',
                     help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
 
-parser.add_argument("--loss_boundary", type=float, default=15.0, help="loss boundary of each batch for monitoring the model pretraining process")
+parser.add_argument("--loss_boundary", type=float, default=10.0, help="loss boundary of each batch for monitoring the model pretraining process")
 
 parser.add_argument('--continue_train', action='store_true', help='continue training from last checkpoint')
 
@@ -213,7 +213,7 @@ if __name__ == '__main__':
         total_files = len(pkl_files)
         processed_files = 0
 
-        for batch_files in get_batch_files(pkl_files, max_batch_size=0.05):
+        for batch_files in get_batch_files(pkl_files, max_batch_size=0.03):
             processed_files += len(batch_files)
             logging.info(f"Iteration {iteration + 1}: Training on files {processed_files}/{total_files}")
 
